@@ -1,0 +1,22 @@
+{
+  "name": "yawb-app-server",
+  "version": "0.0.1",
+  "description": "A whiteboard lecture application Server",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon ./server.js"
+  },
+  "keywords": [],
+  "author": "Matt Bozelka, Robert Contreras, Julia Diliberto",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/captainMattador/YAWB-APP.git"
+  },
+  "dependencies": {
+    "socket.io": "^1.4.6"
+  },
+  "devDependencies": {
+    "nodemon": "^1.9.2"
+  }
+}
