@@ -12,10 +12,21 @@ app.listen(8080);
  */
 boardData.on('connection', function (client) {
   
-  client.on('drawing-points', function(points){
-    boardData.emit('emited-drawing-points', points);
+  client.on('drawing-points', function(data){
+    boardData.emit('emited-drawing-points', data);
   });
   
+  client.on('finalize-board', function(data){
+    boardData.emit('emited-finalize-board', data);
+  });
+  
+  client.on('clear-board', function(){
+    boardData.emit('emited-clear-board');
+  });
+  
+  client.on('undo-history', function(){
+    boardData.emit('emited-undo-history');
+  });
 });
 
 
