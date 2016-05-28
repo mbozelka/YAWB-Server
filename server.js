@@ -27,6 +27,11 @@ boardData.on('connection', function (client) {
   client.on('undo-history', function(){
     boardData.emit('emited-undo-history');
   });
+  
+  client.on('adding-text', function(data){
+    boardData.emit('emited-text-added', data);
+  });
+  
 });
 
 
@@ -40,18 +45,20 @@ roomUsers.on('connection', function (client) {
   
   client.on('joining-room', function(msg){
     if (addedUser) return;
+    var clients = [];
     
     addedUser = true;
     client.user = msg.user;
     client.roomId = msg.room;
     addUserToRoom(client.roomId, client);
     
-    roomUsers.emit('user-joining', client.user);
     activeRooms[client.roomId].map(mappedClient => {
+      clients.push(mappedClient.user);
       if(mappedClient !== client){
         mappedClient.emit('announce-user', mappedClient.user.fname + ' ' + mappedClient.user.lname);
       }
     });
+    roomUsers.emit('user-joining', clients);
     
   });
   
