@@ -1,48 +1,24 @@
 var app = require('http').createServer();
 var io = require('socket.io')(app);
 var roomUsers = io.of('/room-users');
-var boardData = io.of('/board-data');
 var activeRooms = {};
 
 app.listen(8080);
 
 
 /**
- * connection for sending room data
- */
-boardData.on('connection', function (client) {
-  
-  client.on('drawing-points', function(data){
-    boardData.emit('emited-drawing-points', data);
-  });
-  
-  client.on('finalize-board', function(data){
-    boardData.emit('emited-finalize-board', data);
-  });
-  
-  client.on('clear-board', function(){
-    boardData.emit('emited-clear-board');
-  });
-  
-  client.on('undo-history', function(){
-    boardData.emit('emited-undo-history');
-  });
-  
-  client.on('adding-text', function(data){
-    boardData.emit('emited-text-added', data);
-  });
-  
-});
-
-
-
-/**
  * connection that handles room users comming and going
+ * and maps shared room data to correct users
  */
 roomUsers.on('connection', function (client) {
   
   var addedUser = false;
   
+  /**
+   * anytime a user joins the room
+   * they get added to a particular room list
+   * and connections are made.
+   */
   client.on('joining-room', function(msg){
     if (addedUser) return;
     var clients = [];
@@ -51,17 +27,51 @@ roomUsers.on('connection', function (client) {
     client.user = msg.user;
     client.roomId = msg.room;
     addUserToRoom(client.roomId, client);
+    client.join(client.roomId);
     
     activeRooms[client.roomId].map(mappedClient => {
       clients.push(mappedClient.user);
       if(mappedClient !== client){
-        mappedClient.emit('announce-user', mappedClient.user.fname + ' ' + mappedClient.user.lname);
+        mappedClient.emit('announce-user', client.user.fname + ' ' + client.user.lname);
       }
     });
     roomUsers.emit('user-joining', clients);
     
   });
   
+  
+  /**
+   * events related to sending board data
+   * between clients in a particular room
+   */
+  client.on('drawing-points', function(data){
+    roomUsers.in(client.roomId).emit('emited-drawing-points', data);
+  });
+  
+  client.on('finalize-board', function(data){
+    roomUsers.in(client.roomId).emit('emited-finalize-board', data);
+  });
+  
+  client.on('clear-board', function(){
+    roomUsers.in(client.roomId).emit('emited-clear-board');
+  });
+  
+  client.on('undo-history', function(){
+    roomUsers.in(client.roomId).emit('emited-undo-history');
+  });
+  
+  client.on('adding-text', function(data){
+    roomUsers.in(client.roomId).emit('emited-text-added', data);
+  });
+  
+  
+  /**
+   * 
+   * handle disconnect when a user leaves
+   * the room. Also announce the user
+   * has left to everyone else int he room
+   * 
+   */
   client.on('disconnect', function(){ 
     roomUsers.emit('user-leaving', client.user);
     activeRooms[client.roomId].map(mappedClient => {
@@ -75,6 +85,10 @@ roomUsers.on('connection', function (client) {
 });
 
 
+/**
+ * 
+ * helper functions
+ */
 function addUserToRoom(roomId, client){
   if(typeof activeRooms[roomId] === 'undefined'){
     activeRooms[roomId] = [];
