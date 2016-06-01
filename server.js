@@ -33,7 +33,7 @@ roomUsers.on('connection', function (client) {
             mappedClient.emit('announce-user', client.user.fname + ' ' + client.user.lname);
          }
       });
-      roomUsers.emit('user-joining', clients);
+      roomUsers.in(client.roomId).emit('user-joining', clients);
 
    });
 
@@ -61,7 +61,10 @@ roomUsers.on('connection', function (client) {
    client.on('adding-text', function(data){
       roomUsers.in(client.roomId).emit('emited-text-added', data);
    });
-
+   
+   client.on('toggle-board', function(data){
+      roomUsers.in(client.roomId).emit('emited-toggle-board', data);
+   });
 
    // Audio/Video connection code
    
@@ -96,15 +99,14 @@ roomUsers.on('connection', function (client) {
    */
    client.on('disconnect', function(){
       var clients = [];
-      roomUsers.emit('user-leaving', client.user);
       removeUserFromRoom(client.roomId, client);
       activeRooms[client.roomId].map(mappedClient => {
          clients.push(mappedClient.user);
          if(mappedClient !== client){
-            mappedClient.emit('announce-user', client.user.fname + ' ' + client.user.lname);
+            mappedClient.emit('announce-leaving', client.user.fname + ' ' + client.user.lname);
          }
       });
-      roomUsers.emit('user-joining', clients);
+      roomUsers.in(client.roomId).emit('user-leaving', clients);
    });
 
 });
