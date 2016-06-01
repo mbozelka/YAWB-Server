@@ -64,21 +64,29 @@ roomUsers.on('connection', function (client) {
 
 
    // Audio/Video connection code
-
-   client.on('make-offer', function (data) {
-      roomUsers.in(client.roomId).emit('offer-made', {
-         offer: data.offer,
-         client: client.id
+   
+   /**
+    * sets up a one - many connection between owner and users
+    */
+   client.on('message', function (data) {
+      
+      activeRooms[client.roomId].map(mappedClient => {
+          // calling client is not the owner, 
+          // and the mapped client is the owner
+          // send message to owner
+          if(!client.user.owner && mappedClient.user.owner){
+               mappedClient.emit('message', data); 
+          }
+          
+          // owner is sending the message 
+          // to the apporopriate peer connection
+          else if(mappedClient.user.uid === data.to){
+              mappedClient.emit('message', data);
+          }
       });
+      
    });
-
-   client.on('make-answer', function (data) {
-      client.to(data.to).emit('answer-made', {
-         client: client.id,
-         answer: data.answer
-      });
-   });
-
+   
    /**
    *
    * handle disconnect when a user leaves
@@ -87,13 +95,16 @@ roomUsers.on('connection', function (client) {
    *
    */
    client.on('disconnect', function(){
+      var clients = [];
       roomUsers.emit('user-leaving', client.user);
+      removeUserFromRoom(client.roomId, client);
       activeRooms[client.roomId].map(mappedClient => {
+         clients.push(mappedClient.user);
          if(mappedClient !== client){
-            mappedClient.emit('announce-leaving', client.user.fname + ' ' + client.user.lname);
+            mappedClient.emit('announce-user', client.user.fname + ' ' + client.user.lname);
          }
       });
-      removeUserFromRoom(client.roomId, client);
+      roomUsers.emit('user-joining', clients);
    });
 
 });
