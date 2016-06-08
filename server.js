@@ -66,6 +66,10 @@ roomUsers.on('connection', function (client) {
       roomUsers.in(client.roomId).emit('emited-toggle-board', data);
    });
 
+   client.on('update-page', function(data){
+      roomUsers.in(client.roomId).emit('emited-update-page', data);
+   });
+
    // Audio/Video connection code
    
    /**
