@@ -102,10 +102,8 @@ roomUsers.on('connection', function (client) {
       removeUserFromRoom(client.roomId, client);
       activeRooms[client.roomId].map(mappedClient => {
          clients.push(mappedClient.user);
-         if(mappedClient !== client){
-            mappedClient.emit('announce-leaving', client.user.fname + ' ' + client.user.lname);
-         }
       });
+      roomUsers.in(client.roomId).emit('announce-leaving', client.user.fname + ' ' + client.user.lname);
       roomUsers.in(client.roomId).emit('user-leaving', clients);
    });
 
